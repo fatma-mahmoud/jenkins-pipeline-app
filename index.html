@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jenkins Pipeline App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --border: #1e1e2e;
+      --accent: #00e5ff;
+      --accent2: #ff6b35;
+      --accent3: #7c3aed;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Glow orbs */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb-1 { width: 500px; height: 500px; background: rgba(0,229,255,0.06); top: -100px; left: -100px; }
+    .orb-2 { width: 400px; height: 400px; background: rgba(124,58,237,0.07); bottom: 0; right: -50px; }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 60px;
+      animation: fadeDown 0.6s ease both;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+
+    .logo-text {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-text span { color: var(--accent); }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.3);
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 12px;
+      color: var(--success);
+    }
+
+    .pulse {
+      width: 8px; height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      margin-bottom: 70px;
+      animation: fadeUp 0.7s 0.1s ease both;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      background: rgba(0,229,255,0.08);
+      border: 1px solid rgba(0,229,255,0.2);
+      color: var(--accent);
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 5px 16px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(38px, 6vw, 72px);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      margin-bottom: 18px;
+    }
+
+    .hero h1 .line2 {
+      background: linear-gradient(90deg, var(--accent), var(--accent3));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 460px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* Pipeline stages */
+    .pipeline-section {
+      margin-bottom: 60px;
+      animation: fadeUp 0.7s 0.2s ease both;
+    }
+
+    .section-label {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .pipeline-track {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 32px;
+      overflow-x: auto;
+    }
+
+    .stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      min-width: 120px;
+      position: relative;
+    }
+
+    .stage:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: -1px;
+      top: 24px;
+      width: calc(100% - 80px);
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+      left: 60%;
+    }
+
+    .stage-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      position: relative;
+    }
+
+    .stage-icon.done {
+      background: rgba(0,229,255,0.1);
+      border: 1.5px solid rgba(0,229,255,0.4);
+      box-shadow: 0 0 20px rgba(0,229,255,0.15);
+    }
+
+    .stage-icon.running {
+      background: rgba(245,158,11,0.1);
+      border: 1.5px solid rgba(245,158,11,0.4);
+      animation: glow-warning 2s infinite;
+    }
+
+    .stage-icon.pending {
+      background: rgba(100,116,139,0.1);
+      border: 1.5px solid rgba(100,116,139,0.2);
+    }
+
+    .stage-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .stage-status {
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .stage-status.done { color: var(--accent); }
+    .stage-status.running { color: var(--warning); }
+    .stage-status.pending { color: var(--muted); }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 60px;
+      animation: fadeUp 0.7s 0.3s ease both;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 24px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .stat-card:hover {
+      border-color: rgba(0,229,255,0.3);
+      transform: translateY(-2px);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-value.cyan { color: var(--accent); }
+    .stat-value.orange { color: var(--accent2); }
+    .stat-value.green { color: var(--success); }
+    .stat-value.purple { color: #a78bfa; }
+
+    .stat-sub { font-size: 11px; color: var(--muted); }
+
+    /* Logs terminal */
+    .terminal {
+      background: #080810;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 60px;
+      animation: fadeUp 0.7s 0.4s ease both;
+    }
+
+    .terminal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .terminal-dots {
+      display: flex; gap: 7px;
+    }
+
+    .dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+    }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+
+    .terminal-title {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 1px;
+    }
+
+    .terminal-body {
+      padding: 24px;
+      font-size: 12px;
+      line-height: 1.8;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+
+    .log-line { display: block; }
+    .log-line .ts { color: #374151; margin-right: 12px; }
+    .log-line .tag-build { color: var(--accent); }
+    .log-line .tag-test { color: #a78bfa; }
+    .log-line .tag-deploy { color: var(--accent2); }
+    .log-line .tag-ok { color: var(--success); }
+    .log-line .tag-warn { color: var(--warning); }
+
+    /* Endpoint cards */
+    .endpoints {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      animation: fadeUp 0.7s 0.5s ease both;
+    }
+
+    .ep-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: border-color 0.2s;
+    }
+
+    .ep-card:hover { border-color: rgba(0,229,255,0.25); }
+
+    .ep-method {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 6px;
+      min-width: 45px;
+      text-align: center;
+    }
+    .ep-method.get { background: rgba(0,229,255,0.1); color: var(--accent); border: 1px solid rgba(0,229,255,0.2); }
+
+    .ep-path { font-size: 13px; color: var(--text); flex: 1; }
+    .ep-desc { font-size: 11px; color: var(--muted); }
+
+    @keyframes fadeDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(0.85); } }
+    @keyframes glow-warning {
+      0%,100% { box-shadow: 0 0 0px rgba(245,158,11,0); }
+      50% { box-shadow: 0 0 18px rgba(245,158,11,0.35); }
+    }
+  </style>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="logo">
+        <div class="logo-icon">⚙️</div>
+        <div class="logo-text">Pipeline<span>Ops</span></div>
+      </div>
+      <div class="status-badge">
+        <div class="pulse"></div>
+        System Operational
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-tag">CI / CD Dashboard</div>
+      <h1>
+        Build. Test.<br>
+        <span class="line2">Deploy.</span>
+      </h1>
+      <p>Automated container delivery pipeline powered by Jenkins. Every commit triggers a full build, test, and deployment cycle.</p>
+    </div>
+
+    <!-- Pipeline Track -->
+    <div class="pipeline-section">
+      <div class="section-label">▸ Active Pipeline</div>
+      <div class="pipeline-track">
+        <div class="stage">
+          <div class="stage-icon done">🏗️</div>
+          <div class="stage-name">Build</div>
+          <div class="stage-status done">✓ Done</div>
+        </div>
+        <div class="stage">
+          <div class="stage-icon done">🧪</div>
+          <div class="stage-name">Test</div>
+          <div class="stage-status done">✓ Done</div>
+        </div>
+        <div class="stage">
+          <div class="stage-icon done">🐳</div>
+          <div class="stage-name">Dockerize</div>
+          <div class="stage-status done">✓ Done</div>
+        </div>
+        <div class="stage">
+          <div class="stage-icon running">🚀</div>
+          <div class="stage-name">Deploy</div>
+          <div class="stage-status running">⟳ Running</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Builds</div>
+        <div class="stat-value cyan">142</div>
+        <div class="stat-sub">+8 this week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Success Rate</div>
+        <div class="stat-value green">96.4%</div>
+        <div class="stat-sub">Last 30 days</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Build Time</div>
+        <div class="stat-value orange">2m 38s</div>
+        <div class="stat-sub">-12s vs last week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Containers Live</div>
+        <div class="stat-value purple">3</div>
+        <div class="stat-sub">v1.0.0 deployed</div>
+      </div>
+    </div>
+
+    <!-- Terminal Logs -->
+    <div class="terminal">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <div class="terminal-title">pipeline.log — build #142</div>
+        <div></div>
+      </div>
+      <div class="terminal-body">
+        <span class="log-line"><span class="ts">09:41:02</span><span class="tag-build">[BUILD]</span> Cloning repository... done</span>
+        <span class="log-line"><span class="ts">09:41:05</span><span class="tag-build">[BUILD]</span> Installing dependencies via pip...</span>
+        <span class="log-line"><span class="ts">09:41:18</span><span class="tag-ok">[OK]</span>    Dependencies installed successfully</span>
+        <span class="log-line"><span class="ts">09:41:19</span><span class="tag-test">[TEST]</span>  Running pytest suite...</span>
+        <span class="log-line"><span class="ts">09:41:22</span><span class="tag-test">[TEST]</span>  test_health_endpoint .......... PASSED</span>
+        <span class="log-line"><span class="ts">09:41:22</span><span class="tag-test">[TEST]</span>  test_info_endpoint ............ PASSED</span>
+        <span class="log-line"><span class="ts">09:41:23</span><span class="tag-ok">[OK]</span>    All 2 tests passed in 1.2s</span>
+        <span class="log-line"><span class="ts">09:41:24</span><span class="tag-build">[BUILD]</span> Building Docker image: pipelineops:1.0.0</span>
+        <span class="log-line"><span class="ts">09:41:47</span><span class="tag-ok">[OK]</span>    Image built — 128MB</span>
+        <span class="log-line"><span class="ts">09:41:48</span><span class="tag-deploy">[DEPLOY]</span> Pushing to registry...</span>
+        <span class="log-line"><span class="ts">09:41:55</span><span class="tag-deploy">[DEPLOY]</span> Deploying container on port 5000...</span>
+        <span class="log-line"><span class="ts">09:41:58</span><span class="tag-warn">[WAIT]</span>  Waiting for health check...</span>
+      </div>
+    </div>
+
+    <!-- API Endpoints -->
+    <div class="section-label">▸ Application Endpoints</div>
+    <div class="endpoints">
+      <div class="ep-card">
+        <span class="ep-method get">GET</span>
+        <div>
+          <div class="ep-path">/</div>
+          <div class="ep-desc">Main dashboard UI</div>
+        </div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-method get">GET</span>
+        <div>
+          <div class="ep-path">/health</div>
+          <div class="ep-desc">Health check endpoint</div>
+        </div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-method get">GET</span>
+        <div>
+          <div class="ep-path">/api/info</div>
+          <div class="ep-desc">App info & pipeline stages</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
