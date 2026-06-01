@@ -10,20 +10,20 @@ pipeline {
 
     stages {
 
-	stage('Setup Network') {
-    	    steps {
-        	sh 'docker network create jenkins_network || true'
-    		}
-	}
+        stage('Setup Network') {
+            steps {
+                sh 'docker network create jenkins_network || true'
+            }
+        }
 
         stage('Build') {
             steps {
                 echo '📦 Installing dependencies...'
                 sh '''
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install -r requirements.txt
-        '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install -r requirements.txt
+                '''
             }
         }
 
@@ -31,9 +31,9 @@ pipeline {
             steps {
                 echo '🧪 Running tests...'
                 sh '''
-            . venv/bin/activate
-            pytest tests/ -v --tb=short
-        '''
+                    . venv/bin/activate
+                    pytest tests/ -v --tb=short
+                '''
             }
             post {
                 always {
@@ -54,14 +54,9 @@ pipeline {
             steps {
                 echo '🚀 Deploying container...'
                 sh """
-                    docker stop pipeline-app || true
-                    docker rm   pipeline-app || true
-                    docker run -d \
-                        --name pipeline-app \
-			--network jenkins_network \
-                        -p 5000:5000 \
-                        --restart unless-stopped \
-                        ${IMAGE_NAME}:${IMAGE_TAG}
+                    docker stop ${CONTAINER_NAME} || true
+                    docker rm ${CONTAINER_NAME} || true
+                    docker run -d --name ${CONTAINER_NAME} --network jenkins_network -p 5000:5000 --restart unless-stopped ${IMAGE_NAME}:${IMAGE_TAG}
                 """
             }
         }
@@ -78,7 +73,7 @@ pipeline {
 
     post {
         success {
-            echo "🎉 Pipeline #${BUILD_NUMBER} succeeded! App running on port ${APP_PORT}."
+            echo "🎉 Pipeline #${BUILD_NUMBER} succeeded!"
         }
         failure {
             echo "❌ Pipeline #${BUILD_NUMBER} failed. Check logs above."
