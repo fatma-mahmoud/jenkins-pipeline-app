@@ -2,10 +2,10 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "jenkins-pipeline-app"
-        IMAGE_TAG  = "1.0.${BUILD_NUMBER}"
+        IMAGE_NAME     = "jenkins-pipeline-app"
+        IMAGE_TAG      = "1.0.${BUILD_NUMBER}"
         CONTAINER_NAME = "pipeline-app"
-        APP_PORT = "5000"
+        APP_PORT       = "5000"
     }
 
     stages {
@@ -13,6 +13,7 @@ pipeline {
         stage('Setup Network') {
             steps {
                 sh 'docker network create jenkins_network || true'
+                sh 'docker network connect jenkins_network jenkins || true'
             }
         }
 
@@ -36,9 +37,7 @@ pipeline {
                 '''
             }
             post {
-                always {
-                    echo '✅ Test stage complete.'
-                }
+                always { echo '✅ Test stage complete.' }
             }
         }
 
@@ -64,7 +63,7 @@ pipeline {
         stage('Health Check') {
             steps {
                 echo '🔍 Waiting for app to start...'
-                sh 'sleep 5'
+                sh 'sleep 8'
                 sh "curl -f http://pipeline-app:5000/health || exit 1"
                 echo '✅ App is healthy!'
             }
@@ -72,14 +71,10 @@ pipeline {
     }
 
     post {
-        success {
-            echo "🎉 Pipeline #${BUILD_NUMBER} succeeded!"
-        }
-        failure {
-            echo "❌ Pipeline #${BUILD_NUMBER} failed. Check logs above."
-        }
+        success { echo "🎉 Pipeline #${BUILD_NUMBER} succeeded!" }
+        failure { echo "❌ Pipeline #${BUILD_NUMBER} failed." }
         always {
-            echo '🧹 Cleaning up unused Docker images...'
+            echo '🧹 Cleaning up...'
             sh 'docker image prune -f || true'
         }
     }
