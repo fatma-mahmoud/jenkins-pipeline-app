@@ -1,3 +1,9 @@
+stage('Setup Network') {
+    steps {
+        sh 'docker network create jenkins_network || true'
+    }
+}
+
 pipeline {
     agent any
 
@@ -48,11 +54,12 @@ pipeline {
             steps {
                 echo '🚀 Deploying container...'
                 sh """
-                    docker stop ${CONTAINER_NAME} || true
-                    docker rm   ${CONTAINER_NAME} || true
+                    docker stop pipeline-app || true
+                    docker rm   pipeline-app || true
                     docker run -d \
-                        --name ${CONTAINER_NAME} \
-                        -p ${APP_PORT}:5000 \
+                        --name pipeline-app \
+			--network jenkins_network \
+                        -p 5000:5000 \
                         --restart unless-stopped \
                         ${IMAGE_NAME}:${IMAGE_TAG}
                 """
@@ -63,7 +70,7 @@ pipeline {
             steps {
                 echo '🔍 Waiting for app to start...'
                 sh 'sleep 5'
-                sh "curl -f http://localhost:${APP_PORT}/health || exit 1"
+                sh "curl -f http://pipeline-app:5000/health || exit 1"
                 echo '✅ App is healthy!'
             }
         }
