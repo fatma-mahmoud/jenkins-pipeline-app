@@ -1,9 +1,3 @@
-stage('Setup Network') {
-    steps {
-        sh 'docker network create jenkins_network || true'
-    }
-}
-
 pipeline {
     agent any
 
@@ -15,6 +9,12 @@ pipeline {
     }
 
     stages {
+
+	stage('Setup Network') {
+    	    steps {
+        	sh 'docker network create jenkins_network || true'
+    		}
+	}
 
         stage('Build') {
             steps {
