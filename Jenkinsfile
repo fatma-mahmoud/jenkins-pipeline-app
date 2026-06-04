@@ -55,7 +55,7 @@ pipeline {
                 sh """
                     docker stop ${CONTAINER_NAME} || true
                     docker rm ${CONTAINER_NAME} || true
-                    docker run -d --name ${CONTAINER_NAME} --network jenkins_network -p 9999:5000 --restart unless-stopped ${IMAGE_NAME}:${IMAGE_TAG}
+                    docker run -d --name ${CONTAINER_NAME} --network jenkins_network -p 8088:5000 --restart unless-stopped ${IMAGE_NAME}:${IMAGE_TAG}
                 """
             }
         }
